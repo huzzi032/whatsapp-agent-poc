@@ -1,6 +1,7 @@
 from langchain_openai import AzureChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import HuggingFaceEmbeddings
+from pydantic import SecretStr
 from dotenv import load_dotenv
 import os
 
@@ -26,10 +27,11 @@ def get_rag_chain():
         allow_dangerous_deserialization=True
     )
 
+    api_key_value = os.getenv("AZURE_OPENAI_API_KEY")
     llm = AzureChatOpenAI(
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        api_key=SecretStr(api_key_value) if api_key_value else None,
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-        deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
         api_version="2025-01-01-preview",
         temperature=0.2
     )
