@@ -5,11 +5,7 @@ from pydantic import SecretStr
 from dotenv import load_dotenv
 import os
 
-# Support both legacy and current LangChain layouts for RetrievalQA
-try:
-    from langchain_classic.chains import RetrievalQA  # type: ignore[reportMissingImports]
-except ImportError:  # pragma: no cover - fallback for newer layouts
-    from langchain.chains.retrieval_qa.base import RetrievalQA  # type: ignore[reportMissingImports]
+from langchain_classic.chains import RetrievalQA
 
 load_dotenv()
 # at the top of rag.py

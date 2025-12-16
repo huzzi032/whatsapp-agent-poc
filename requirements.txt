@@ -4,7 +4,7 @@ requests==2.31.0
 openai==1.3.0
 langchain-openai==0.1.1
 langchain-community==0.0.13
-langchain-classic
+langchain-classic==1.0.0
 langchain-text-splitters==0.0.1
 python-dotenv==1.0.0
 faiss-cpu==1.7.4
