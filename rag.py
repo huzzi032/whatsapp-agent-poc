@@ -5,7 +5,9 @@ from pydantic import SecretStr
 from dotenv import load_dotenv
 import os
 
-from langchain_classic.chains import RetrievalQA
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 
 load_dotenv()
 # at the top of rag.py
@@ -32,11 +34,17 @@ def get_rag_chain():
         temperature=0.2
     )
 
-    qa = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
-        return_source_documents=False
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+    prompt = ChatPromptTemplate.from_template(
+        "Use the following context to answer the question: {context}\n\nQuestion: {question}"
+    )
+
+    qa = (
+        {"context": retriever, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
     )
 
     return qa

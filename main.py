@@ -52,7 +52,7 @@ async def receive_message(request: Request):
 
 def ai_reply(user_message: str) -> str:
     result = rag_chain.invoke(user_message)
-    return result["result"]
+    return result
 
 
 
