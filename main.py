@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from typing import Optional
 import requests
 import os
 import openai
@@ -20,11 +21,11 @@ openai.api_key = OPENAI_API_KEY
 
 @app.get("/webhook")
 def verify_webhook(
-    hub_mode: str = None,
-    hub_challenge: str = None,
-    hub_verify_token: str = None,
+    hub_mode: Optional[str] = None,
+    hub_challenge: Optional[str] = None,
+    hub_verify_token: Optional[str] = None,
 ):
-    if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN:
+    if hub_mode == "subscribe" and hub_verify_token == VERIFY_TOKEN and hub_challenge is not None:
         return int(hub_challenge)
     return "Verification failed"
 
