@@ -6,3 +6,5 @@ faiss_index/index.pkl
 data/
 .venv/
 .DS_Store
+Dockerfile
+test_*.py
