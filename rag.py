@@ -9,6 +9,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import AzureChatOpenAI
 from langchain.chains import RetrievalQA
+from langchain_core.language_models.fake import FakeListLLM  # type: ignore
+from pydantic.v1 import SecretStr
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -34,16 +36,12 @@ class LangChainRAG:
                 azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
                 azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini"),
                 api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01"),
-                api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+                api_key=SecretStr(os.getenv("AZURE_OPENAI_API_KEY", "")),
                 temperature=0.2,
             )
         except Exception as e:
-            if "proxies" in str(e):
-                # Fallback to a fake LLM for testing
-                from langchain_core.language_models.fake import FakeLLM
-                self.llm = FakeLLM(responses=["This is a mock response for testing purposes."])
-            else:
-                raise
+            print(f"Failed to initialize Azure OpenAI: {e}")
+            raise
 
         # Create RetrievalQA chain
         self.qa_chain = RetrievalQA.from_chain_type(
