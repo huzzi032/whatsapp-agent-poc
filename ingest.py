@@ -1,11 +1,9 @@
 import os
-import json
-import pickle
 from dotenv import load_dotenv
 from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
-import numpy as np
-import faiss
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
@@ -17,37 +15,20 @@ def load_pdf_text(path: str) -> str:
 
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 100):
-    chunks = []
-    start = 0
-    length = len(text)
-    while start < length:
-        end = start + chunk_size
-        chunk = text[start:end]
-        chunks.append(chunk.strip())
-        if end >= length:
-            break
-        start = end - overlap
-    return chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=overlap,
+        separators=["\n\n", "\n", " ", ""]
+    )
+    return text_splitter.split_text(text)
 
 
 def build_faiss_index(texts, model_name: str, index_dir: str):
     os.makedirs(index_dir, exist_ok=True)
-    embedder = SentenceTransformer(model_name)
-    embeddings = embedder.encode(texts, convert_to_numpy=True)
-    # ensure float32
-    embeddings = np.array(embeddings, dtype=np.float32)
-    dim = embeddings.shape[1]
-    index = faiss.IndexFlatL2(dim)
-    # ensure embeddings are contiguous float32 array and pass as keyword to satisfy type checkers
-    embeddings = np.ascontiguousarray(embeddings, dtype=np.float32)
-    # FAISS SWIG wrapper expects a positional ndarray argument; calling with
-    # keywords can raise a TypeError at runtime. Use the positional form.
-    # (Pylance may warn about missing named params; ignore that for runtime.)
-    index.add(embeddings)  # type: ignore[arg-type]
-    faiss.write_index(index, os.path.join(index_dir, "index.faiss"))
-    # store texts mapping
-    with open(os.path.join(index_dir, "index.pkl"), "wb") as f:
-        pickle.dump(texts, f)
+    embeddings = HuggingFaceEmbeddings(model_name=model_name)
+    vectorstore = FAISS.from_texts(texts, embeddings)
+    vectorstore.save_local(index_dir)
+    print(f"✅ FAISS index saved to {index_dir}")
 
 
 def main():
