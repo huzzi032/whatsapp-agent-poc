@@ -1,9 +1,6 @@
 .env
 __pycache__/
 *.pyc
-faiss_index/index.faiss
-faiss_index/index.pkl
-data/
 .venv/
 .DS_Store
 Dockerfile

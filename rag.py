@@ -12,8 +12,33 @@ from langchain.chains import RetrievalQA
 from langchain_core.language_models.fake import FakeListLLM  # type: ignore
 from pydantic.v1 import SecretStr
 from dotenv import load_dotenv
+from pypdf import PdfReader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 load_dotenv()
+
+
+def load_pdf_text(path: str) -> str:
+    reader = PdfReader(path)
+    pages = [p.extract_text() or "" for p in reader.pages]
+    return "\n\n".join(pages)
+
+
+def chunk_text(text: str, chunk_size: int = 800, overlap: int = 100):
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=overlap,
+        separators=["\n\n", "\n", " ", ""]
+    )
+    return text_splitter.split_text(text)
+
+
+def build_faiss_index(texts, model_name: str, index_dir: str):
+    os.makedirs(index_dir, exist_ok=True)
+    embeddings = HuggingFaceEmbeddings(model_name=model_name)
+    vectorstore = FAISS.from_texts(texts, embeddings)
+    vectorstore.save_local(index_dir)
+    print(f"✅ FAISS index saved to {index_dir}")
 
 
 class LangChainRAG:
@@ -27,7 +52,7 @@ class LangChainRAG:
         # Load FAISS index
         index_path = os.path.join(self.index_dir, "index.faiss")
         if not os.path.exists(index_path):
-            raise FileNotFoundError(f"FAISS index not found at {index_path}")
+            self._build_index()
         self.vectorstore = FAISS.load_local(self.index_dir, self.embeddings, allow_dangerous_deserialization=True)
 
         # Set up LLM
@@ -50,6 +75,15 @@ class LangChainRAG:
             retriever=self.vectorstore.as_retriever(search_kwargs={"k": 3}),
             return_source_documents=False,
         )
+
+    def _build_index(self):
+        pdf_path = os.path.join(os.path.dirname(__file__), "data", "Jafi_Shoes_Collection.pdf")
+        if not os.path.exists(pdf_path):
+            raise FileNotFoundError(f"PDF not found at {pdf_path}")
+        text = load_pdf_text(pdf_path)
+        chunks = chunk_text(text, chunk_size=800, overlap=100)
+        build_faiss_index(chunks, self.embedding_model, self.index_dir)
+        print("✅ FAISS index created successfully")
 
     def invoke(self, query: str) -> str:
         result = self.qa_chain.invoke({"query": query})
