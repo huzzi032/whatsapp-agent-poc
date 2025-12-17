@@ -12,6 +12,7 @@ import json
 from typing import List
 from dotenv import load_dotenv
 import requests
+import numpy as np
 
 from sentence_transformers import SentenceTransformer
 import faiss
@@ -86,7 +87,7 @@ class SimpleRAG:
         return [str(obj)]
 
     def _embed(self, texts: List[str]):
-        return self.embedder.encode(texts, convert_to_numpy=True)
+        return np.array(self.embedder.encode(texts, convert_to_numpy=True))
 
     def retrieve(self, query: str, k: int = 3) -> List[str]:
         q_emb = self._embed([query])
