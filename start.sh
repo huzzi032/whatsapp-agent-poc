@@ -1,4 +1,10 @@
 #!/bin/bash
-cd /tmp/8de3dadd2366b1c
+set -e
+
+cd /home/site/wwwroot
+
+# activate Azure-created venv
 source antenv/bin/activate
-python3 -m gunicorn main:app -c gunicorn.conf.py
+
+# start app
+python -m gunicorn main:app -c gunicorn.conf.py
